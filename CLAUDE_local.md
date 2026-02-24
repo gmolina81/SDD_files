@@ -1,106 +1,59 @@
-# CLAUDE.md — Estándares Globales de Codificación Python
+# CLAUDE.md — Proyecto: Enriquecimiento de Modelo de Crédito
 
-Este archivo aplica a todos los proyectos. Define los estándares base
-que nunca cambian independientemente del tipo de proyecto.
+Este archivo extiende el CLAUDE.md global con las convenciones
+específicas de este proyecto. No repetir aquí lo que ya está en el global.
 
 ---
 
-## 1. Logging
+## Tipo de Proyecto
 
-Todo módulo debe incluir logging desde el inicio. Sin excepciones.
+Exploración y transformación de datos con **Jupyter Notebook**.
+La lógica reutilizable vive en `src/`, el notebook solo orquesta e importa.
 
-```python
-import logging
+---
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("logs/pipeline.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+## Estructura de Carpetas
+
 ```
-
-Reglas:
-- `logger.info()` para inicio/fin de cada etapa y conteos de registros.
-- `logger.warning()` para anomalías no fatales.
-- `logger.error()` con traceback completo para errores fatales.
-- Nunca usar `print()` en lugar de logging.
-
----
-
-## 2. Manejo de Errores
-
-- Siempre usar `try/except` en operaciones de I/O y conexiones externas.
-- Nunca capturar `Exception` sin loguearlo con `logger.error(..., exc_info=True)`.
-- Validar precondiciones antes de operar y lanzar errores descriptivos.
-
-```python
-required_columns = ["col_a", "col_b"]
-missing = [col for col in required_columns if col not in df.columns]
-if missing:
-    raise ValueError(f"Columnas faltantes en {filename}: {missing}")
+proyecto/
+├── data/
+│   ├── raw/          # Archivos Excel originales — NO modificar
+│   └── processed/    # Outputs generados por el pipeline
+├── logs/
+├── notebooks/
+│   └── pipeline_enrichment.ipynb
+├── src/
+│   ├── normalizacion.py
+│   ├── extraccion_periodo.py
+│   └── merge.py
+├── tests/
+├── CLAUDE.md
+├── SPEC.md
+└── requirements.txt
 ```
 
 ---
 
-## 3. Tests con pytest
+## Librerías del Proyecto
 
-- Escribir los tests **antes** de implementar el código (TDD).
-- Cada módulo en `src/` tiene su archivo de tests en `tests/` con prefijo `test_`.
-- Cubrir caso feliz, casos borde y casos de error esperados.
-- Los tests no deben depender de archivos reales ni conexiones externas.
-- Ejecutar `pytest tests/` antes de considerar cualquier tarea completa.
-
----
-
-## 4. Estructura de Funciones
-
-- Type hints obligatorios en parámetros y retorno.
-- Docstring obligatorio con descripción, args y returns.
-- Máximo 50 líneas por función. Si supera ese límite, dividir.
-- No usar variables de una sola letra salvo índices en loops simples.
+- Transformación de datos: `pandas`
+- Lectura de Excel: `openpyxl`
+- Notebooks: `jupyter`
+- Tests: `pytest`
+- Variables de entorno: `python-dotenv`
 
 ---
 
-## 5. Artefactos Obligatorios por Proyecto
+## Convenciones Específicas
 
-Antes de escribir cualquier línea de código, el proyecto debe tener:
-
-- **`SPEC.md`** — especificación técnica: fuentes, reglas de negocio, outputs y tests requeridos.
-- **`requirements.txt`** — dependencias con versiones fijas.
-
-Estos dos archivos son la fuente de verdad. Si no existen, crearlos antes de continuar.
-
----
-
-## 6. Flujo de Trabajo — Aplicar en Todo Requerimiento
-
-Seguir este orden sin saltear pasos:
-
-```
-1. Leer el SPEC.md completo antes de tocar cualquier archivo.
-2. Usar Plan Mode (Shift+Tab) para planificar la implementación.
-   - Identificar módulos a crear o modificar.
-   - Identificar casos borde no contemplados en el SPEC.
-   - Confirmar el plan con el usuario antes de continuar.
-3. Escribir los tests primero (TDD).
-   - Los tests deben fallar antes de implementar el código.
-4. Implementar el código hasta que los tests pasen.
-5. Validar con datos reales antes de dar la tarea por terminada.
-```
+- El notebook **nunca define funciones**. Solo importa desde `src/` y muestra métricas.
+- Cada celda del notebook termina imprimiendo conteos y métricas del paso ejecutado.
+- Las columnas de cédula de cada fuente se renombran a `cedula_normalizada` antes de cualquier merge.
+- Prefijos obligatorios en columnas de proveedores: `seon_` y `riskseal_`.
+- El campo de join temporal es `loan_disbursed_date` del modelo de crédito.
 
 ---
 
-## 7. Gestión de Cambios en el Requerimiento
+## Referencia
 
-Si el requerimiento cambia durante el desarrollo:
-
-1. Detener la implementación.
-2. Actualizar el `SPEC.md` primero.
-3. Actualizar los tests para reflejar el nuevo comportamiento.
-4. Recién entonces modificar el código.
-
-> El código siempre debe ser consecuencia del SPEC, nunca al revés.
+Ver `SPEC.md` para fuentes de datos, reglas de negocio, lógica temporal del match y tests requeridos.
